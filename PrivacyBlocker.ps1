@@ -180,7 +180,6 @@ $domains = @(
     "insiderservice.trafficmanager.net",
     "location-inference-westus.cloudapp.net",
     "live.rads.msn.com",
-    "login.live.com",
     "m.adnxs.com",
     "m.hotmail.com",
     "modern.watson.data.microsoft.com",
