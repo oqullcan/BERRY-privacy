@@ -126,8 +126,8 @@ $domains = @(
     "self-events-data.trafficmanager.net",
     "onedscolprdwus12.westus.cloudapp.azure.com",
     "v10.events.data.microsoft.com",
-    "win-global-asimov-leafs-events-data.trafficmanager.net"
-    "onedscolprdeus02.eastus.cloudapp.azure.com"
+    "win-global-asimov-leafs-events-data.trafficmanager.net",
+    "onedscolprdeus02.eastus.cloudapp.azure.com",
     "v10c.events.data.microsoft.com",
     "onedscolprdweu14.westeurope.cloudapp.azure.com",
     "us-v10c.events.data.microsoft.com",
