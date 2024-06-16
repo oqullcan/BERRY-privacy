@@ -141,7 +141,7 @@ $domains = @(
     "onedscolprdweu12.westeurope.cloudapp.azure.com",
     "vortex-win.data.microsoft.com",
     "asimov-win.vortex.data.trafficmanager.net",
-    "onedscolprdcus03.centralus.cloudapp.azure.com"
+    "onedscolprdcus03.centralus.cloudapp.azure.com",
     "telecommand.telemetry.microsoft.com",
     "telecommand.azurewebsites.net",
     "waws-prod-usw3-011-3570.westus3.cloudapp.azure.com",
