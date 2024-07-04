@@ -1,4 +1,20 @@
-# function to add telemetry domains to the hosts file
+# Function to log messages with timestamps and colors
+function Write-Log {
+    param (
+        [string]$message,
+        [string]$type = "INFO"
+    )
+
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    switch ($type) {
+        "INFO" { Write-Host "$timestamp [$type] $message" -ForegroundColor Cyan }
+        "ERROR" { Write-Host "$timestamp [$type] $message" -ForegroundColor Red }
+        "SUCCESS" { Write-Host "$timestamp [$type] $message" -ForegroundColor Green }
+        default { Write-Host "$timestamp [$type] $message" -ForegroundColor White }
+    }
+}
+
+# Function to add telemetry domains to the hosts file
 function Add-DomainsToHostsFile {
     param (
         [string]$hostsFilePath,
@@ -6,79 +22,109 @@ function Add-DomainsToHostsFile {
         [string]$comment = "x.com/oqullcn"
     )
 
-    # define the hosts file encoding
-    $hostsFileEncoding = [Microsoft.PowerShell.Commands.FileSystemCmdletProviderEncoding]::Utf8
-
-    # define the blocking entries for both IPv4 and IPv6
+    $hostsFileEncoding = "UTF8"
     $blockingHostsEntries = @(
         @{ AddressType = "IPv4"; IPAddress = '0.0.0.0'; },
         @{ AddressType = "IPv6"; IPAddress = '::1'; }
     )
 
     try {
-        $isHostsFilePresent = Test-Path -Path $hostsFilePath -PathType Leaf -ErrorAction Stop
+        if (-Not (Test-Path -Path $hostsFilePath -PathType Leaf)) {
+            Write-Log "Creating a new hosts file at $hostsFilePath." "INFO"
+            New-Item -Path $hostsFilePath -ItemType File -Force | Out-Null
+            Write-Log "Successfully created the hosts file." "SUCCESS"
+        }
+
+        foreach ($domain in $domains) {
+            foreach ($blockingEntry in $blockingHostsEntries) {
+                Write-Log "Processing addition for $($blockingEntry.AddressType) entry for domain $domain." "INFO"
+                try {
+                    $hostsFileContents = Get-Content -Path $hostsFilePath -Raw -Encoding $hostsFileEncoding
+                } catch {
+                    Write-Log "Failed to read the hosts file. Error: $_" "ERROR"
+                    continue
+                }
+
+                $hostsEntryLine = "$($blockingEntry.IPAddress)`t$domain $([char]35) $comment"
+
+                if ($hostsFileContents -contains $hostsEntryLine) {
+                    Write-Log "Skipping, entry already exists for domain $domain." "INFO"
+                    continue
+                }
+
+                try {
+                    Add-Content -Path $hostsFilePath -Value $hostsEntryLine -Encoding $hostsFileEncoding
+                    Write-Log "Successfully added the entry for domain $domain." "SUCCESS"
+                } catch {
+                    Write-Log "Failed to add the entry for domain $domain. Error: $_" "ERROR"
+                    continue
+                }
+            }
+        }
     } catch {
-        Write-Error "Failed to check hosts file existence. Error: $_"
+        Write-Log "Unexpected error in Add-DomainsToHostsFile. Error: $_" "ERROR"
         exit 1
-    }
-
-    if (-Not $isHostsFilePresent) {
-        Write-Output "Creating a new hosts file at $hostsFilePath."
-        try {
-            New-Item -Path $hostsFilePath -ItemType File -Force -ErrorAction Stop | Out-Null
-            Write-Output "Successfully created the hosts file."
-        } catch {
-            Write-Error "Failed to create the hosts file. Error: $_"
-            exit 1
-        }
-    }
-
-    foreach ($domain in $domains) {
-        foreach ($blockingEntry in $blockingHostsEntries) {
-            Write-Output "Processing addition for $($blockingEntry.AddressType) entry for domain $domain."
-            try {
-                $hostsFileContents = Get-Content -Path $hostsFilePath -Raw -Encoding $hostsFileEncoding -ErrorAction Stop
-            } catch {
-                Write-Error "Failed to read the hosts file. Error: $_"
-                continue
-            }
-
-            $hostsEntryLine = "$($blockingEntry.IPAddress)`t$domain $([char]35) $comment"
-
-            if ((-Not [String]::IsNullOrWhiteSpace($hostsFileContents)) -And ($hostsFileContents.Contains($hostsEntryLine))) {
-                Write-Output "Skipping, entry already exists for domain $domain."
-                continue
-            }
-
-            try {
-                Add-Content -Path $hostsFilePath -Value $hostsEntryLine -Encoding $hostsFileEncoding -ErrorAction Stop
-                Write-Output "Successfully added the entry for domain $domain."
-            } catch {
-                Write-Error "Failed to add the entry for domain $domain. Error: $_"
-                continue
-            }
-        }
     }
 }
 
-# function to block telemetry IPs via Windows Firewall
+# Function to block telemetry IPs via Windows Firewall
 function Block-TelemetryIPs {
     param (
         [string[]]$ips
     )
 
-    # remove any existing rule with the same name to avoid duplicates
-    Remove-NetFirewallRule -DisplayName "PrivacyBlocker" -ErrorAction SilentlyContinue
-
-    # create a new firewall rule to block the provided IP addresses
-    New-NetFirewallRule -DisplayName "PrivacyBlocker" -Direction Outbound -Action Block -RemoteAddress ([string[]]$ips)
+    try {
+        Remove-NetFirewallRule -DisplayName "PrivacyBlocker" -ErrorAction SilentlyContinue | Out-Null
+        New-NetFirewallRule -DisplayName "PrivacyBlocker" -Direction Outbound -Action Block -RemoteAddress $ips | Out-Null
+        Write-Log "Successfully created firewall rule to block telemetry IPs." "SUCCESS"
+    } catch {
+        Write-Log "Failed to create firewall rule. Error: $_" "ERROR"
+    }
 }
 
-# define the hosts file path
+# Function to disable telemetry settings in Windows 10 and 11
+function Disable-Telemetry {
+    try {
+        Write-Log "Disabling telemetry via registry settings." "INFO"
+        $telemetrySettings = @(
+            "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection",
+            "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection"
+        )
+
+        foreach ($path in $telemetrySettings) {
+            Set-ItemProperty -Path $path -Name "AllowTelemetry" -Value 0 -Force -ErrorAction Stop
+            Write-Log "Set AllowTelemetry to 0 at $path." "SUCCESS"
+        }
+
+        Write-Log "Disabling DiagTrack service." "INFO"
+        Stop-Service -Name "DiagTrack" -ErrorAction SilentlyContinue | Out-Null
+        Set-Service -Name "DiagTrack" -StartupType Disabled -ErrorAction Stop
+
+        Write-Log "Disabling dmwappushservice service." "INFO"
+        Stop-Service -Name "dmwappushservice" -ErrorAction SilentlyContinue | Out-Null
+        Set-Service -Name "dmwappushservice" -StartupType Disabled -ErrorAction Stop
+
+        Write-Log "Disabling Connected User Experiences and Telemetry (DiagTrack)." "INFO"
+        Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\DiagTrack" -Name "Start" -Value 4 -ErrorAction Stop
+
+        if (Test-Path "HKLM:\SYSTEM\CurrentControlSet\Services\dmwappushsvc") {
+            Write-Log "Disabling dmwappushsvc." "INFO"
+            Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\dmwappushsvc" -Name "Start" -Value 4 -ErrorAction Stop
+        } else {
+            Write-Log "dmwappushsvc service not found. Skipping." "INFO"
+        }
+
+        Write-Log "Telemetry settings disabled successfully." "SUCCESS"
+    } catch {
+        Write-Log "Failed to disable telemetry settings. Error: $_" "ERROR"
+    }
+}
+
+# Define the hosts file path
 $hostsFilePath = "$env:SystemRoot\System32\drivers\etc\hosts"
 
+# Define telemetry domains and IPs
 $domains = @(
-
     # Activity
     "activity.windows.com",
     "activity-consumer.trafficmanager.net",
@@ -291,11 +337,9 @@ $domains = @(
     "browser.events.data.trafficmanager.net",
     "onedscolprdwus00.westus.cloudapp.azure.com",
     "outlookads.live.com"
-
 )
 
 $ips = @(
-    
     "2.22.61.43",
     "2.22.61.66",
     "8.36.80.197",
@@ -513,11 +557,15 @@ $ips = @(
     "204.79.197.200",
     "207.68.166.254",
     "216.228.121.209"
-    
 )
 
-# add domains to the hosts file
+# Add domains to the hosts file
 Add-DomainsToHostsFile -hostsFilePath $hostsFilePath -domains $domains
 
-# block telemetry IPs via firewall
+# Block telemetry IPs via firewall
 Block-TelemetryIPs -ips $ips
+
+# Disable telemetry settings in Windows 10 and 11
+Disable-Telemetry
+
+Write-Log "All tasks completed." "SUCCESS"
