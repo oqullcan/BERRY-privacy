@@ -1,22 +1,13 @@
 
-## Overview
+# BERRY-privacy
 
-**BERRY-privacy** is a PowerShell script designed to enhance your privacy by blocking telemetry fields and IP addresses. The script performs the following actions:
-
-1. Clears the existing contents of the Hosts file and appends it with both IPv4 and IPv6 entries to block the specified domains.
-2. Blocks the specified IP addresses using Windows Firewall rules.
+This PowerShell script enhances privacy and security on Windows systems by disabling telemetry settings, blocking telemetry IPs via firewall, and modifying system settings to minimize data collection and transmission.
 
 ## Features
 
-- Cleans and updates the hosts file to block specified domains.
-- Supports both IPv4 (**0.0.0.0.0**) and IPv6 (**::1**) entries to block domains.
-- Blocks specified IP addresses using Windows Firewall.
-- Includes comments for each blocked entry for easy identification.
-
-## Prerequisites
-
-- Windows operating system.
-- PowerShell with administrator privileges.
+- **Telemetry Disabling:** Disables telemetry settings in Windows 10 and 11 through registry modifications.
+- **Firewall Blocking:** Blocks telemetry IPs using Windows Firewall rules.
+- **Hosts File Modification:** Adds telemetry domains to the hosts file to prevent data collection from specified domains.
 
 ## Usage
 
@@ -26,3 +17,8 @@
 irm https://raw.githubusercontent.com/oqullcan/BERRY-privacy/main/BERRY-privacy.ps1 | iex
 ```
 3. Enter.
+
+## Disclaimer
+
+- Use this script at your own risk. Understand the implications of disabling telemetry and modifying system settings before executing the script.
+- Always review and verify the changes made by the script to ensure they align with your system's security and privacy requirements.
