@@ -1,8 +1,7 @@
-# Windows Privacy Blocker
 
 ## Overview
 
-**Privacy Blocker** is a PowerShell script designed to enhance your privacy by blocking telemetry fields and IP addresses. The script performs the following actions:
+**BERRY-privacy** is a PowerShell script designed to enhance your privacy by blocking telemetry fields and IP addresses. The script performs the following actions:
 
 1. Clears the existing contents of the Hosts file and appends it with both IPv4 and IPv6 entries to block the specified domains.
 2. Blocks the specified IP addresses using Windows Firewall rules.
@@ -24,6 +23,6 @@
 1. Open PowerShell with administrator privileges.
 2. Run the script using the following command:
 ```
-irm "https://raw.githubusercontent.com/oqullcan/Privacy-Blocker/main/PrivacyBlocker.ps1" | iex
+irm "https://raw.githubusercontent.com/oqullcan/BERRY-privacy/main/BERRY-privacy.ps1" | iex
 ```
 3. Enter.
