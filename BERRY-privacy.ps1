@@ -379,7 +379,7 @@ $domains = @(
     "config.edge.skype.com",
 
     # Photos App Sync
-    "evoke-windowsservices-tas.msedge.net",
+    "evoke-windowsservices-tas.msedge.net"
 
 )
 
