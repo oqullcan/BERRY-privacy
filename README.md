@@ -23,6 +23,6 @@
 1. Open PowerShell with administrator privileges.
 2. Run the script using the following command:
 ```
-irm "https://raw.githubusercontent.com/oqullcan/BERRY-privacy/main/BERRY-privacy.ps1" | iex
+irm https://raw.githubusercontent.com/oqullcan/BERRY-privacy/main/BERRY-privacy.ps1 | iex
 ```
 3. Enter.
