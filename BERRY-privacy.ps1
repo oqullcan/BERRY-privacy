@@ -268,6 +268,19 @@ function Disable-FeedbackDiagnosticServices {
     }
 }
 
+$dnsServers = @{
+    IPv4Preferred = "9.9.9.9"
+    IPv4Alternate = "149.112.112.112"
+    IPv6Preferred = "2620:fe::fe"
+    IPv6Alternate = "2620:fe::9"
+}
+$networkProfiles = Get-NetAdapter | Get-NetIPInterface -AddressFamily IPv4, IPv6 | Where-Object { $_.ConnectionState -eq 'Connected' }
+
+foreach ($profile in $networkProfiles) {
+    Set-DnsClientServerAddress -InterfaceAlias $profile.InterfaceAlias -ServerAddresses ($dnsServers.IPv4Preferred, $dnsServers.IPv4Alternate)
+    Set-DnsClientServerAddress -InterfaceAlias $profile.InterfaceAlias -ServerAddresses ($dnsServers.IPv6Preferred, $dnsServers.IPv6Alternate)
+}
+
 # Define the hosts file path
 $hostsFilePath = "$env:SystemRoot\System32\drivers\etc\hosts"
 
