@@ -113,14 +113,6 @@ function Disable-Telemetry {
         Set-RegistryValue -path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Feedback" -name "DoNotShowFeedbackNotifications" -type "DWORD" -value 1
         Set-RegistryValue -path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -name "NoCloudSync" -type "DWORD" -value 1
 
-        Write-Log "Disabling DiagTrack service." "INFO"
-        Stop-Service -Name "DiagTrack" -ErrorAction SilentlyContinue | Out-Null
-        Set-Service -Name "DiagTrack" -StartupType Disabled -ErrorAction Stop
-
-        Write-Log "Disabling dmwappushservice service." "INFO"
-        Stop-Service -Name "dmwappushservice" -ErrorAction SilentlyContinue | Out-Null
-        Set-Service -Name "dmwappushservice" -StartupType Disabled -ErrorAction Stop
-
         Write-Log "Disabling Connected User Experiences and Telemetry (DiagTrack)." "INFO"
         Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\DiagTrack" -Name "Start" -Value 4 -ErrorAction Stop
 
